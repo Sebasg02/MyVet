@@ -1,28 +1,25 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MyVet.Web.Data;
 using MyVet.Web.Data.Entities;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace MyVet.Web.Controllers
 {
     public class ServiceTypesController : Controller
     {
-        private readonly DataContext _context;
+        private readonly DataContext _dataContext;
 
         public ServiceTypesController(DataContext context)
         {
-            _context = context;
+            _dataContext = context;
         }
 
         // GET: ServiceTypes
         public async Task<IActionResult> Index()
         {
-            return View(await _context.ServiceTypes.ToListAsync());
+            return View(await _dataContext.ServiceTypes.ToListAsync());
         }
 
         // GET: ServiceTypes/Details/5
@@ -33,7 +30,7 @@ namespace MyVet.Web.Controllers
                 return NotFound();
             }
 
-            var serviceType = await _context.ServiceTypes
+            var serviceType = await _dataContext.ServiceTypes
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (serviceType == null)
             {
@@ -58,8 +55,8 @@ namespace MyVet.Web.Controllers
         {
             if (ModelState.IsValid)
             {
-                _context.Add(serviceType);
-                await _context.SaveChangesAsync();
+                _dataContext.Add(serviceType);
+                await _dataContext.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
             return View(serviceType);
@@ -73,7 +70,7 @@ namespace MyVet.Web.Controllers
                 return NotFound();
             }
 
-            var serviceType = await _context.ServiceTypes.FindAsync(id);
+            var serviceType = await _dataContext.ServiceTypes.FindAsync(id);
             if (serviceType == null)
             {
                 return NotFound();
@@ -97,8 +94,8 @@ namespace MyVet.Web.Controllers
             {
                 try
                 {
-                    _context.Update(serviceType);
-                    await _context.SaveChangesAsync();
+                    _dataContext.Update(serviceType);
+                    await _dataContext.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
@@ -116,38 +113,34 @@ namespace MyVet.Web.Controllers
             return View(serviceType);
         }
 
-        // GET: ServiceTypes/Delete/5
-        public async Task<IActionResult> Delete(int? id)
+        public async Task<IActionResult> DeleteServiceTypes(int? id)
         {
             if (id == null)
             {
                 return NotFound();
             }
 
-            var serviceType = await _context.ServiceTypes
+            var serviceType = await _dataContext.ServiceTypes
+                .Include(st => st.Histories)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (serviceType == null)
             {
                 return NotFound();
             }
+            if (serviceType.Histories.Count > 0)
+            {
+                ModelState.AddModelError(string.Empty, "The services types can't deleted because it has related records.");
+                return RedirectToAction($"{nameof(Index)}");
+            }
 
-            return View(serviceType);
-        }
-
-        // POST: ServiceTypes/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            var serviceType = await _context.ServiceTypes.FindAsync(id);
-            _context.ServiceTypes.Remove(serviceType);
-            await _context.SaveChangesAsync();
+            _dataContext.ServiceTypes.Remove(serviceType);
+            await _dataContext.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
         private bool ServiceTypeExists(int id)
         {
-            return _context.ServiceTypes.Any(e => e.Id == id);
+            return _dataContext.ServiceTypes.Any(e => e.Id == id);
         }
     }
 }
