@@ -129,7 +129,7 @@ namespace MyVet.Web.Controllers
             }
             if (petType.Pets.Count > 0)
             {
-                ModelState.AddModelError(string.Empty, "The services types can't deleted because it has related records.");
+                ModelState.AddModelError(string.Empty, "The pet types can't deleted because it has related records.");
                 return RedirectToAction($"{nameof(Index)}");
             }
 
